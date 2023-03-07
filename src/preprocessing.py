@@ -68,11 +68,10 @@ def preprocess_data(
 
     ordinal_enc = OrdinalEncoder()
     ordinal_enc.fit(train_binary_features)
-    one_hot_enc = OneHotEncoder()
+    one_hot_enc = OneHotEncoder(handle_unknown='ignore')
     one_hot_enc.fit(train_non_binary_features)
     imputer = SimpleImputer(strategy="median")
-    scaler= MinMaxScaler()
-    
+    scaler = MinMaxScaler()
 
     for name, df in datasets.items():
         binary_enc_features = ordinal_enc.transform(df[binary_columns])
@@ -80,46 +79,36 @@ def preprocess_data(
             df[non_binary_columns]
         ).toarray()
 
-        binary_enc_features = pd.DataFrame(
-            columns=ordinal_enc.get_feature_names_out(binary_columns),
-            data=binary_enc_features,
-        )
-        non_binary_enc_features = pd.DataFrame(
-            columns=one_hot_enc.get_feature_names_out(non_binary_columns),
-            data=non_binary_enc_features,
-        )
-
         df.drop(columns=binary_columns, inplace=True)
         df.drop(columns=non_binary_columns, inplace=True)
-        df.reset_index(inplace=True)
+        df_array = df.to_numpy()
 
-        datasets[name] = df.join(
-            [binary_enc_features, non_binary_enc_features]
-        ).set_index("index")
+        datasets[name] = np.concatenate(
+            (df_array, binary_enc_features, non_binary_enc_features), axis=1
+        )
 
-
-    # 3. TODO Impute values for all columns with missing data or, just all the columns.
-    # Use median as imputing value. Please use sklearn.impute.SimpleImputer().
-    # Again, take into account that:
-    #   - You must apply this to the 3 DataFrames (working_train_df, working_val_df,
-    #     working_test_df).
-    #   - In order to prevent overfitting and avoid Data Leakage you must use only
-    #     working_train_df DataFrame to fit the SimpleImputer and then use the fitted
-    #     model to transform all the datasets.
-        if name=='train':
+        # 3. TODO Impute values for all columns with missing data or, just all the columns.
+        # Use median as imputing value. Please use sklearn.impute.SimpleImputer().
+        # Again, take into account that:
+        #   - You must apply this to the 3 DataFrames (working_train_df, working_val_df,
+        #     working_test_df).
+        #   - In order to prevent overfitting and avoid Data Leakage you must use only
+        #     working_train_df DataFrame to fit the SimpleImputer and then use the fitted
+        #     model to transform all the datasets.
+        if name == "train":
             imputer.fit(datasets[name])
-        datasets[name]=imputer.transform(datasets[name])
+        datasets[name] = imputer.transform(datasets[name])
 
-    # 4. TODO Feature scaling with Min-Max scaler. Apply this to all the columns.
-    # Please use sklearn.preprocessing.MinMaxScaler().
-    # Again, take into account that:
-    #   - You must apply this to the 3 DataFrames (working_train_df, working_val_df,
-    #     working_test_df).
-    #   - In order to prevent overfitting and avoid Data Leakage you must use only
-    #     working_train_df DataFrame to fit the MinMaxScaler and then use the fitted
-    #     model to transform all the datasets.
-        if name=="train":
+        # 4. TODO Feature scaling with Min-Max scaler. Apply this to all the columns.
+        # Please use sklearn.preprocessing.MinMaxScaler().
+        # Again, take into account that:
+        #   - You must apply this to the 3 DataFrames (working_train_df, working_val_df,
+        #     working_test_df).
+        #   - In order to prevent overfitting and avoid Data Leakage you must use only
+        #     working_train_df DataFrame to fit the MinMaxScaler and then use the fitted
+        #     model to transform all the datasets.
+        if name == "train":
             scaler.fit(datasets[name])
-        datasets[name]=scaler.transform(datasets[name])
+        datasets[name] = scaler.transform(datasets[name])
 
     return list(datasets.values())

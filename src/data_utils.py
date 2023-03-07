@@ -116,7 +116,7 @@ def get_train_val_sets(
     # calls (see `random_state` parameter in `train_test_split`).
     # Shuffle the data (see `shuffle` parameter in `train_test_split`).
     Xv_train, X_val, yv_train, y_val = train_test_split(
-        X_train, y_train, test_size=0.2, random_state=42, shuffle=True
+        X_train, y_train, test_size=0.2, random_state=1, shuffle=True, stratify=y_train
     )
 
     return Xv_train, X_val, yv_train, y_val

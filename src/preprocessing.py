@@ -66,9 +66,11 @@ def preprocess_data(
     binary_columns = train_binary_features.columns
     non_binary_columns = train_non_binary_features.columns
 
-    ordinal_enc = OrdinalEncoder()
+    ordinal_enc = OrdinalEncoder(
+        handle_unknown="use_encoded_value", unknown_value=np.nan
+    )
     ordinal_enc.fit(train_binary_features)
-    one_hot_enc = OneHotEncoder(handle_unknown='ignore')
+    one_hot_enc = OneHotEncoder(handle_unknown="ignore")
     one_hot_enc.fit(train_non_binary_features)
     imputer = SimpleImputer(strategy="median")
     scaler = MinMaxScaler()
@@ -97,6 +99,7 @@ def preprocess_data(
         #     model to transform all the datasets.
         if name == "train":
             imputer.fit(datasets[name])
+            scaler.fit(datasets[name])
         datasets[name] = imputer.transform(datasets[name])
 
         # 4. TODO Feature scaling with Min-Max scaler. Apply this to all the columns.
@@ -107,8 +110,6 @@ def preprocess_data(
         #   - In order to prevent overfitting and avoid Data Leakage you must use only
         #     working_train_df DataFrame to fit the MinMaxScaler and then use the fitted
         #     model to transform all the datasets.
-        if name == "train":
-            scaler.fit(datasets[name])
         datasets[name] = scaler.transform(datasets[name])
 
     return list(datasets.values())
